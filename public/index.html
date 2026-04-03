@@ -1,20 +1,72 @@
 ﻿<!DOCTYPE html>
-<html>
+<html lang="zh">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CNC仿真器</title>
+<title>CNC数控铣床仿真器</title>
 <style>
-body{font-family:system-ui;background:#1a1a2e;color:#fff;padding:20px;max-width:600px;margin:0 auto}
-textarea{width:100%;height:150px;background:#0d0d1a;color:#0f0;border:1px solid #333;padding:10px;font-family:monospace}
-button{background:#4f46e5;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;margin-top:10px}
-canvas{background:#1a1a2e;border:1px solid #333;display:block;margin:20px auto}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui;background:#0A0A0F;color:#EAEAEA;padding:16px;max-width:700px;margin:0 auto}
+.header{background:#12121A;border:1px solid rgba(0,240,255,0.15);border-radius:8px;padding:20px;margin-bottom:12px}
+.header-label{color:#555570;font-size:10px;letter-spacing:2px;text-transform:uppercase}
+.header-title{color:#EAEAEA;font-size:20px;font-weight:700;margin-top:4px}
+.header-line{height:2px;background:#00F0FF;border-radius:1px;margin-top:12px;width:40px}
+.tool-info{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;background:#12121A;border-radius:6px;padding:10px;border:1px solid rgba(0,240,255,0.15)}
+.tool-item{display:flex;align-items:center;gap:4px;font-size:11px}
+.tool-item .dot{width:8px;height:8px;border-radius:50%}
+.section{margin-top:14px}
+.section-title{color:#555570;font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.examples{display:flex;gap:8px;flex-wrap:wrap}
+.example-chip{background:#12121A;border:1px solid rgba(0,240,255,0.15);border-radius:6px;padding:8px 14px;color:#00F0FF;font-size:12px;cursor:pointer}
+.example-chip:hover{border-color:#00F0FF}
+.code-box{background:#12121A;border:1px solid rgba(0,240,255,0.15);border-radius:8px}
+.code-box textarea{width:100%;min-height:140px;background:transparent;color:#EAEAEA;border:none;padding:12px;font-family:monospace;font-size:12px;resize:vertical}
+.code-box textarea::placeholder{color:#555570}
+.btns{display:flex;gap:8px;margin-top:12px}
+.btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600}
+.btn-primary{flex:1;background:#00F0FF;color:#0A0A0F}
+.btn-secondary{background:transparent;border:1px solid #00F0FF;color:#00F0FF}
+.btn-danger{background:transparent;border:1px solid #FF003C;color:#FF003C}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.error{display:flex;align-items:center;gap:8px;background:rgba(255,0,60,0.1);border:1px solid rgba(255,0,60,0.3);border-radius:8px;padding:12px;margin-top:10px;color:#FF003C;font-size:12px}
+.result{margin-top:16px}
+.stats{display:flex;justify-content:space-around;background:#12121A;border:1px solid rgba(0,240,255,0.15);border-radius:8px;padding:12px}
+.stat{text-align:center}
+.stat-value{color:#00F0FF;font-size:18px;font-weight:700;font-family:monospace}
+.stat-label{color:#555570;font-size:10px;margin-top:2px}
+.legend{display:flex;justify-content:center;gap:20px;margin-top:12px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:10px;color:#555570}
+.legend-line{width:16px;height:4px;border-radius:2px}
+.canvas-wrap{display:flex;flex-direction:column;align-items:center;margin-top:14px}
+canvas{background:#12121A;border-radius:10px}
+.progress{display:flex;align-items:center;gap:10px;margin-top:10px;width:100%}
+.progress-bar{flex:1;height:4px;background:#12121A;border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:#00F0FF;border-radius:2px}
+.progress-text{color:#555570;font-size:10px;font-family:monospace;min-width:60px}
+.hint{color:#555570;font-size:10px;text-align:center;margin-top:8px}
 </style>
 </head>
 <body>
-<h1>数控铣床仿真器</h1>
-<p>工件: 直径32mm | 刀具: 直径5mm</p>
-<textarea id="gcode">G00 G90 G59
+<div class="header">
+<div class="header-label">CNC SIMULATOR</div>
+<div class="header-title">数控铣床仿真器</div>
+<div class="header-line"></div>
+</div>
+<div class="tool-info">
+<div class="tool-item"><span class="dot" style="background:#FFB800"></span>工件 Ø32mm</div>
+<div class="tool-item"><span class="dot" style="background:#00F0FF"></span>刀具 Ø5mm</div>
+<div class="tool-item"><span class="dot" style="background:#00FF88"></span>转速 800RPM</div>
+<div class="tool-item"><span class="dot" style="background:#FF003C"></span>下刀 30mm/min</div>
+<div class="tool-item"><span class="dot" style="background:#00F0FF"></span>进给 80mm/min</div>
+</div>
+<div class="section">
+<div class="section-title">示例程序</div>
+<div class="examples" id="examples"></div>
+</div>
+<div class="section">
+<div class="section-title">G代码程序</div>
+<div class="code-box">
+<textarea id="gcode" placeholder="输入G代码程序...">G00 G90 G59
 M03 S800
 G00 X0 Y0 Z5
 G01 Z-1 F30
@@ -26,20 +78,136 @@ G01 X0 Y10
 G00 Z50
 M05
 M30</textarea>
-<button onclick="simulate()">仿真</button>
-<canvas id="c" width="400" height="400"></canvas>
-<p id="info" style="text-align:center;color:#666">等待仿真...</p>
+</div>
+</div>
+<div class="btns">
+<button class="btn btn-primary" id="simBtn" onclick="simulate()">▶ 解析程序</button>
+<button class="btn btn-secondary" id="playBtn" style="display:none" onclick="togglePlay()">▶ 仿真</button>
+<button class="btn btn-danger" id="resetBtn" style="display:none" onclick="reset()">✕ 重置</button>
+</div>
+<div class="error" id="error" style="display:none"></div>
+<div class="result" id="result" style="display:none">
+<div class="stats">
+<div class="stat"><div class="stat-value" id="totalSeg">0</div><div class="stat-label">路径段</div></div>
+<div class="stat"><div class="stat-value" id="cutSeg">0</div><div class="stat-label">切削段</div></div>
+<div class="stat"><div class="stat-value" id="totalPts">0</div><div class="stat-label">插值点</div></div>
+</div>
+<div class="legend">
+<div class="legend-item"><div class="legend-line" style="background:#00FF88"></div>切削区域</div>
+<div class="legend-item"><div class="legend-line" style="background:#555570;height:1px"></div>快速移动</div>
+</div>
+<div class="canvas-wrap">
+<canvas id="c" width="360" height="360"></canvas>
+<div class="progress">
+<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+<div class="progress-text" id="progressText">0 / 0</div>
+</div>
+</div>
+<div class="hint">绿色区域 = 刀具切削范围（Ø5mm）</div>
+</div>
 <script>
 const ctx=document.getElementById('c').getContext('2d');
-const cx=200,cy=200;
-function draw(){ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,400,400);ctx.strokeStyle='#3a3a5a';ctx.beginPath();ctx.arc(cx,cy,160,0,7);ctx.stroke()}
-draw();
+const cx=180,cy=180,scale=10,workpieceR=160,toolR=25;
+let data=null,points=[],idx=0,playing=false,timer=null;
+
+drawEmpty();
+loadExamples();
+
+async function loadExamples(){
+try{
+const r=await fetch('/api/v1/examples');
+const d=await r.json();
+if(d.success){
+const wrap=document.getElementById('examples');
+wrap.innerHTML=d.examples.map(e=><div class="example-chip" onclick="loadExample('')"></div>).join('');
+}
+}catch(e){}
+}
+
+function loadExample(code){document.getElementById('gcode').value=code.replace(/\\n/g,'\n')}
+
+function drawEmpty(){
+ctx.fillStyle='#0A0A0F';ctx.fillRect(0,0,360,360);
+ctx.strokeStyle='rgba(0,240,255,0.2)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,workpieceR,0,7);ctx.stroke();
+ctx.fillStyle='#555';ctx.font='12px sans-serif';ctx.textAlign='center';ctx.fillText('工件轮廓 (Ø32mm)',cx,cy);
+}
+
 async function simulate(){
 const gcode=document.getElementById('gcode').value;
-const res=await fetch('/api/simulate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({gcode})});
-const data=await res.json();
-if(data.success){draw();ctx.strokeStyle='#0f0';ctx.lineWidth=2;ctx.beginPath();data.path.forEach((p,i)=>i===0?ctx.moveTo(cx+p.x,cy-p.y):ctx.lineTo(cx+p.x,cy-p.y));ctx.stroke();document.getElementById('info').textContent='路径点: '+data.total}
+if(!gcode.trim()){showErr('请输入G代码');return}
+hideErr();
+document.getElementById('playBtn').style.display='none';
+document.getElementById('resetBtn').style.display='none';
+document.getElementById('result').style.display='none';
+stopAnim();
+try{
+const r=await fetch('/api/v1/simulate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({gcode,scale})});
+data=await r.json();
+if(!data.success){showErr(data.error);return}
+points=data.points;
+idx=0;
+drawPath();
+document.getElementById('totalSeg').textContent=data.totalSegments;
+document.getElementById('cutSeg').textContent=data.pathSegments.filter(s=>s.type!=='rapid'&&s.start.z<0).length;
+document.getElementById('totalPts').textContent=data.totalPoints;
+document.getElementById('progressText').textContent='0 / '+data.totalPoints;
+document.getElementById('result').style.display='block';
+document.getElementById('playBtn').style.display='block';
+document.getElementById('resetBtn').style.display='block';
+}catch(e){showErr('网络错误: '+e.message)}
 }
+
+function drawPath(){
+if(!data)return;
+ctx.fillStyle='#0A0A0F';ctx.fillRect(0,0,360,360);
+ctx.strokeStyle='rgba(0,240,255,0.2)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,workpieceR,0,7);ctx.stroke();
+ctx.strokeStyle='rgba(0,240,255,0.06)';ctx.lineWidth=0.5;
+for(let i=-15;i<=15;i+=5){ctx.beginPath();ctx.moveTo(cx+i*scale,cy-workpieceR);ctx.lineTo(cx+i*scale,cy+workpieceR);ctx.stroke();ctx.beginPath();ctx.moveTo(cx-workpieceR,cy-i*scale);ctx.lineTo(cx+workpieceR,cy-i*scale);ctx.stroke()}
+ctx.fillStyle='rgba(0,240,255,0.4)';ctx.beginPath();ctx.arc(cx,cy,2,0,7);ctx.fill();
+
+if(data.pathSegments){
+for(const s of data.pathSegments){
+const isCut=s.type!=='rapid'&&s.start.z<0&&s.end.z<0;
+ctx.strokeStyle=isCut?'rgba(0,255,136,0.5)':'#555570';
+ctx.lineWidth=isCut?toolR*2:1;
+if(s.type==='arc_cw'||s.type==='arc_ccw'){
+const sa=Math.atan2(cy-s.start.y-cy,cx+s.start.x-cx);
+const ea=Math.atan2(cy-s.end.y-cy,cx+s.end.x-cx);
+ctx.beginPath();ctx.arc(cx+s.center.x,cy-s.center.y,s.radius,-sa,-ea,s.type==='arc_cw');ctx.stroke();
+}else{ctx.beginPath();ctx.moveTo(cx+s.start.x,cy-s.start.y);ctx.lineTo(cx+s.end.x,cy-s.end.y);ctx.stroke()}
+}
+}
+
+if(idx>0&&points){
+ctx.fillStyle='rgba(0,240,255,0.15)';ctx.beginPath();ctx.arc(cx+points[idx].x,cy-points[idx].y,toolR,0,7);ctx.fill();
+ctx.strokeStyle='#00F0FF';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(cx+points[idx].x,cy-points[idx].y,toolR,0,7);ctx.stroke();
+ctx.fillStyle='#00F0FF';ctx.beginPath();ctx.arc(cx+points[idx].x,cy-points[idx].y,3,0,7);ctx.fill();
+}
+}
+
+function togglePlay(){if(playing)stopAnim();else startAnim()}
+
+function startAnim(){
+if(!points||points.length===0)return;
+playing=true;
+document.getElementById('playBtn').textContent='⏸ 暂停';
+idx=0;
+timer=setInterval(()=>{
+if(idx>=points.length-1){stopAnim();return}
+idx++;
+drawPath();
+const pct=(idx/points.length)*100;
+document.getElementById('progressFill').style.width=pct+'%';
+document.getElementById('progressText').textContent=idx+' / '+points.length;
+},80);
+}
+
+function stopAnim(){playing=false;document.getElementById('playBtn').textContent='▶ 仿真';if(timer){clearInterval(timer);timer=null}}
+
+function reset(){data=null;points=[];idx=0;stopAnim();drawEmpty();document.getElementById('result').style.display='none';document.getElementById('playBtn').style.display='none';document.getElementById('resetBtn').style.display='none'}
+
+function showErr(m){const e=document.getElementById('error');e.textContent='⚠ '+m;e.style.display='flex'}
+function hideErr(){document.getElementById('error').style.display='none'}
 </script>
 </body>
 </html>
