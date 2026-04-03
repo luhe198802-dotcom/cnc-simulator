@@ -37,6 +37,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0A0A0F;
 .legend-line{width:20px;border-radius:2px}
 .canvas-wrap{display:flex;flex-direction:column;align-items:center;margin-top:14px}
 canvas{background:#12121A;border-radius:10px}
+.pos-display{display:flex;justify-content:center;gap:20px;background:#12121A;border:1px solid rgba(0,240,255,0.15);border-radius:6px;padding:10px;margin-top:10px;width:100%}
+.pos-item{text-align:center}
+.pos-label{color:#555570;font-size:10px;text-transform:uppercase;letter-spacing:1px}
+.pos-value{color:#00F0FF;font-size:16px;font-weight:700;font-family:Menlo,Monaco,monospace;margin-top:2px}
 .progress{display:flex;align-items:center;gap:10px;margin-top:10px;width:100%}
 .progress-bar{flex:1;height:4px;background:#1E1E28;border-radius:2px;overflow:hidden}
 .progress-fill{height:100%;background:#00F0FF;border-radius:2px;transition:width 0.2s}
@@ -92,6 +96,11 @@ M30</textarea>
 </div>
 <div class="canvas-wrap">
 <canvas id="c" width="360" height="360"></canvas>
+<div class="pos-display">
+<div class="pos-item"><div class="pos-label">X</div><div class="pos-value" id="posX">0.00</div></div>
+<div class="pos-item"><div class="pos-label">Y</div><div class="pos-value" id="posY">0.00</div></div>
+<div class="pos-item"><div class="pos-label">Z</div><div class="pos-value" id="posZ">50.00</div></div>
+</div>
 <div class="progress">
 <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
 <div class="progress-text" id="progressText">0 / 0</div>
@@ -153,13 +162,19 @@ async function simulate(){
     document.getElementById("result").style.display="block";
     document.getElementById("playBtn").style.display="block";
     document.getElementById("resetBtn").style.display="block";
+    updatePos(0,0,50);
   }catch(e){
     document.getElementById("error").textContent="网络错误: "+e.message;
     document.getElementById("error").style.display="flex";
   }
 }
 
-// 绘制圆形刀具切削段（胶囊形状：两端圆形+中间矩形）
+function updatePos(x,y,z){
+  document.getElementById("posX").textContent=(x/10).toFixed(2);
+  document.getElementById("posY").textContent=(y/10).toFixed(2);
+  document.getElementById("posZ").textContent=z.toFixed(2);
+}
+
 function drawCapsule(x1,y1,x2,y2,r){
   const dx=x2-x1,dy=y2-y1;
   const len=Math.sqrt(dx*dx+dy*dy);
@@ -244,6 +259,7 @@ function drawPath(){
     ctx.beginPath();
     ctx.arc(cx+p.x,cy-p.y,3,0,Math.PI*2);
     ctx.fill();
+    updatePos(p.x,p.y,p.z);
   }
 }
 
@@ -284,10 +300,12 @@ function reset(){
   idx=0;
   stopAnim();
   drawEmpty();
+  document.getElementById("gcode").value="";
   document.getElementById("result").style.display="none";
   document.getElementById("playBtn").style.display="none";
   document.getElementById("resetBtn").style.display="none";
   document.getElementById("progressFill").style.width="0%";
+  updatePos(0,0,50);
 }
 
 function hideErr(){
