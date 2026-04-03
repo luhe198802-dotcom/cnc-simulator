@@ -1,0 +1,45 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CNC仿真器</title>
+<style>
+body{font-family:system-ui;background:#1a1a2e;color:#fff;padding:20px;max-width:600px;margin:0 auto}
+textarea{width:100%;height:150px;background:#0d0d1a;color:#0f0;border:1px solid #333;padding:10px;font-family:monospace}
+button{background:#4f46e5;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;margin-top:10px}
+canvas{background:#1a1a2e;border:1px solid #333;display:block;margin:20px auto}
+</style>
+</head>
+<body>
+<h1>数控铣床仿真器</h1>
+<p>工件: 直径32mm | 刀具: 直径5mm</p>
+<textarea id="gcode">G00 G90 G59
+M03 S800
+G00 X0 Y0 Z5
+G01 Z-1 F30
+G01 X-10 Y0 F80
+G01 X10 Y0
+G01 X0 Y0
+G01 X0 Y-10
+G01 X0 Y10
+G00 Z50
+M05
+M30</textarea>
+<button onclick="simulate()">仿真</button>
+<canvas id="c" width="400" height="400"></canvas>
+<p id="info" style="text-align:center;color:#666">等待仿真...</p>
+<script>
+const ctx=document.getElementById('c').getContext('2d');
+const cx=200,cy=200;
+function draw(){ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,400,400);ctx.strokeStyle='#3a3a5a';ctx.beginPath();ctx.arc(cx,cy,160,0,7);ctx.stroke()}
+draw();
+async function simulate(){
+const gcode=document.getElementById('gcode').value;
+const res=await fetch('/api/simulate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({gcode})});
+const data=await res.json();
+if(data.success){draw();ctx.strokeStyle='#0f0';ctx.lineWidth=2;ctx.beginPath();data.path.forEach((p,i)=>i===0?ctx.moveTo(cx+p.x,cy-p.y):ctx.lineTo(cx+p.x,cy-p.y));ctx.stroke();document.getElementById('info').textContent='路径点: '+data.total}
+}
+</script>
+</body>
+</html>
