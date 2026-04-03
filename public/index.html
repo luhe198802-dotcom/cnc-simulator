@@ -6,7 +6,7 @@
 <title>CNC数控铣床仿真器</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0A0A0F;color:#EAEAEA;padding:16px;max-width:700px;margin:0 auto;min-height:100vh}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0A0A0F;color:#EAEAEA;padding:16px;max-width:700px;margin:0 auto}
 .header{background:#12121A;border:1px solid rgba(0,240,255,0.15);border-radius:8px;padding:20px;margin-bottom:12px}
 .header-label{color:#555570;font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:600}
 .header-title{color:#EAEAEA;font-size:20px;font-weight:700;margin-top:4px}
@@ -16,9 +16,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0A0A0F;
 .dot{width:8px;height:8px;border-radius:50%}
 .section{margin-top:14px}
 .section-title{color:#555570;font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:600;margin-bottom:8px}
-.examples{display:flex;gap:8px;flex-wrap:wrap}
-.example-chip{background:#12121A;border:1px solid rgba(0,240,255,0.15);border-radius:6px;padding:8px 14px;color:#00F0FF;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s}
-.example-chip:hover{border-color:#00F0FF;background:rgba(0,240,255,0.05)}
 .code-box{background:#12121A;border:1px solid rgba(0,240,255,0.15);border-radius:8px;overflow:hidden}
 .code-box textarea{width:100%;min-height:140px;background:transparent;color:#EAEAEA;border:none;padding:12px;font-family:Menlo,Monaco,monospace;font-size:12px;line-height:1.5;resize:vertical}
 .code-box textarea:focus{outline:none}
@@ -26,11 +23,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0A0A0F;
 .btns{display:flex;gap:8px;margin-top:12px}
 .btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.2s}
 .btn-primary{flex:1;background:#00F0FF;color:#0A0A0F}
-.btn-primary:hover{background:#33F3FF}
 .btn-secondary{background:transparent;border:1px solid #00F0FF;color:#00F0FF}
-.btn-secondary:hover{background:rgba(0,240,255,0.1)}
 .btn-danger{background:transparent;border:1px solid #FF003C;color:#FF003C}
-.btn-danger:hover{background:rgba(255,0,60,0.1)}
 .btn:disabled{opacity:0.5;cursor:not-allowed}
 .error{display:none;align-items:center;gap:8px;background:rgba(255,0,60,0.1);border:1px solid rgba(255,0,60,0.3);border-radius:8px;padding:12px;margin-top:10px;color:#FF003C;font-size:12px}
 .result{margin-top:16px;display:none}
@@ -45,7 +39,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0A0A0F;
 canvas{background:#12121A;border-radius:10px}
 .progress{display:flex;align-items:center;gap:10px;margin-top:10px;width:100%}
 .progress-bar{flex:1;height:4px;background:#1E1E28;border-radius:2px;overflow:hidden}
-.progress-fill{height:100%;background:#00F0FF;border-radius:2px;transition:width 0.1s}
+.progress-fill{height:100%;background:#00F0FF;border-radius:2px;transition:width 0.2s}
 .progress-text{color:#555570;font-size:10px;font-family:Menlo,Monaco,monospace;min-width:60px;text-align:right}
 .hint{color:#555570;font-size:10px;text-align:center;margin-top:10px}
 </style>
@@ -62,10 +56,6 @@ canvas{background:#12121A;border-radius:10px}
 <div class="tool-item"><span class="dot" style="background:#00FF88"></span>转速 800RPM</div>
 <div class="tool-item"><span class="dot" style="background:#FF003C"></span>下刀 30</div>
 <div class="tool-item"><span class="dot" style="background:#00F0FF"></span>进给 80</div>
-</div>
-<div class="section">
-<div class="section-title">示例程序</div>
-<div class="examples" id="examples"></div>
 </div>
 <div class="section">
 <div class="section-title">G代码程序</div>
@@ -85,7 +75,7 @@ M30</textarea>
 </div>
 </div>
 <div class="btns">
-<button class="btn btn-primary" id="simBtn" onclick="simulate()">▶ 解析程序</button>
+<button class="btn btn-primary" onclick="simulate()">▶ 解析程序</button>
 <button class="btn btn-secondary" id="playBtn" style="display:none" onclick="togglePlay()">▶ 仿真</button>
 <button class="btn btn-danger" id="resetBtn" style="display:none" onclick="reset()">✕ 重置</button>
 </div>
@@ -115,23 +105,6 @@ const cx=180,cy=180,workpieceR=160,toolR=25;
 let data=null,points=[],idx=0,playing=false,timer=null;
 
 drawEmpty();
-loadExamples();
-
-async function loadExamples(){
-  try{
-    const r=await fetch("/api/v1/examples");
-    const d=await r.json();
-    if(d.success){
-      const wrap=document.getElementById("examples");
-      wrap.innerHTML=d.examples.map(e=>`<div class="example-chip" onclick="loadExample(this)" data-code="${e.code.replace(/"/g,"&quot;").replace(/\n/g,"\\n")}">${e.name}</div>`).join("");
-    }
-  }catch(e){}
-}
-
-function loadExample(el){
-  const code=el.getAttribute("data-code").replace(/\\n/g,"\n");
-  document.getElementById("gcode").value=code;
-}
 
 function drawEmpty(){
   ctx.fillStyle="#0A0A0F";
@@ -191,14 +164,12 @@ function drawPath(){
   ctx.fillStyle="#0A0A0F";
   ctx.fillRect(0,0,360,360);
   
-  // 工件轮廓
   ctx.strokeStyle="rgba(0,240,255,0.2)";
   ctx.lineWidth=1;
   ctx.beginPath();
   ctx.arc(cx,cy,workpieceR,0,Math.PI*2);
   ctx.stroke();
   
-  // 网格
   ctx.strokeStyle="rgba(0,240,255,0.06)";
   ctx.lineWidth=0.5;
   for(let i=-15;i<=15;i+=5){
@@ -212,37 +183,23 @@ function drawPath(){
     ctx.stroke();
   }
   
-  // 圆心
   ctx.fillStyle="rgba(0,240,255,0.4)";
   ctx.beginPath();
   ctx.arc(cx,cy,2,0,Math.PI*2);
   ctx.fill();
   
-  // 绘制路径
   if(data.pathSegments){
     for(const s of data.pathSegments){
       const isCut=s.type!=="rapid"&&s.start.z<0&&s.end.z<0;
-      
-      if(s.type==="arc_cw"||s.type==="arc_ccw"){
-        ctx.strokeStyle=isCut?"rgba(0,255,136,0.5)":"#555570";
-        ctx.lineWidth=isCut?toolR*2:1;
-        const sa=Math.atan2(cy-s.start.y,cx+s.start.x);
-        const ea=Math.atan2(cy-s.end.y,cx+s.end.x);
-        ctx.beginPath();
-        ctx.arc(cx+s.center.x,cy-s.center.y,s.radius,-sa,-ea,s.type==="arc_cw");
-        ctx.stroke();
-      }else{
-        ctx.strokeStyle=isCut?"rgba(0,255,136,0.5)":"#555570";
-        ctx.lineWidth=isCut?toolR*2:1;
-        ctx.beginPath();
-        ctx.moveTo(cx+s.start.x,cy-s.start.y);
-        ctx.lineTo(cx+s.end.x,cy-s.end.y);
-        ctx.stroke();
-      }
+      ctx.strokeStyle=isCut?"rgba(0,255,136,0.5)":"#555570";
+      ctx.lineWidth=isCut?toolR*2:1;
+      ctx.beginPath();
+      ctx.moveTo(cx+s.start.x,cy-s.start.y);
+      ctx.lineTo(cx+s.end.x,cy-s.end.y);
+      ctx.stroke();
     }
   }
   
-  // 刀具位置
   if(idx>0&&points&&points[idx]){
     const p=points[idx];
     ctx.fillStyle="rgba(0,240,255,0.15)";
@@ -280,7 +237,7 @@ function startAnim(){
     drawPath();
     document.getElementById("progressFill").style.width=(idx/points.length*100)+"%";
     document.getElementById("progressText").textContent=idx+" / "+points.length;
-  },80);
+  },240);
 }
 
 function stopAnim(){
