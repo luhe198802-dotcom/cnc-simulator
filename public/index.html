@@ -159,6 +159,30 @@ async function simulate(){
   }
 }
 
+// 绘制圆形刀具切削段（胶囊形状：两端圆形+中间矩形）
+function drawCapsule(x1,y1,x2,y2,r){
+  const dx=x2-x1,dy=y2-y1;
+  const len=Math.sqrt(dx*dx+dy*dy);
+  if(len<0.1){
+    ctx.beginPath();
+    ctx.arc(x1,y1,r,0,Math.PI*2);
+    ctx.fill();
+    return;
+  }
+  const angle=Math.atan2(dy,dx);
+  ctx.save();
+  ctx.translate(x1,y1);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.arc(0,0,r,Math.PI/2,-Math.PI/2);
+  ctx.lineTo(len,0-r);
+  ctx.arc(len,0,r,-Math.PI/2,Math.PI/2);
+  ctx.lineTo(0,r);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
 function drawPath(){
   if(!data)return;
   ctx.fillStyle="#0A0A0F";
@@ -191,12 +215,17 @@ function drawPath(){
   if(data.pathSegments){
     for(const s of data.pathSegments){
       const isCut=s.type!=="rapid"&&s.start.z<0&&s.end.z<0;
-      ctx.strokeStyle=isCut?"rgba(0,255,136,0.5)":"#555570";
-      ctx.lineWidth=isCut?toolR*2:1;
-      ctx.beginPath();
-      ctx.moveTo(cx+s.start.x,cy-s.start.y);
-      ctx.lineTo(cx+s.end.x,cy-s.end.y);
-      ctx.stroke();
+      if(isCut){
+        ctx.fillStyle="rgba(0,255,136,0.6)";
+        drawCapsule(cx+s.start.x,cy-s.start.y,cx+s.end.x,cy-s.end.y,toolR);
+      }else{
+        ctx.strokeStyle="#555570";
+        ctx.lineWidth=1;
+        ctx.beginPath();
+        ctx.moveTo(cx+s.start.x,cy-s.start.y);
+        ctx.lineTo(cx+s.end.x,cy-s.end.y);
+        ctx.stroke();
+      }
     }
   }
   
