@@ -20,11 +20,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0A0A0F;
 .code-box textarea{width:100%;min-height:140px;background:transparent;color:#EAEAEA;border:none;padding:12px;font-family:Menlo,Monaco,monospace;font-size:12px;line-height:1.5;resize:vertical}
 .code-box textarea:focus{outline:none}
 .code-box textarea::placeholder{color:#555570}
-.btns{display:flex;gap:8px;margin-top:12px}
+.btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.2s}
 .btn-primary{flex:1;background:#00F0FF;color:#0A0A0F}
 .btn-secondary{background:transparent;border:1px solid #00F0FF;color:#00F0FF}
 .btn-danger{background:transparent;border:1px solid #FF003C;color:#FF003C}
+.btn-example{background:rgba(0,240,255,0.1);border:1px solid rgba(0,240,255,0.3);color:#00F0FF}
 .btn:disabled{opacity:0.5;cursor:not-allowed}
 .error{display:none;align-items:center;gap:8px;background:rgba(255,0,60,0.1);border:1px solid rgba(255,0,60,0.3);border-radius:8px;padding:12px;margin-top:10px;color:#FF003C;font-size:12px}
 .result{margin-top:16px;display:none}
@@ -64,21 +65,11 @@ canvas{background:#12121A;border-radius:10px}
 <div class="section">
 <div class="section-title">G代码程序</div>
 <div class="code-box">
-<textarea id="gcode" placeholder="输入G代码程序...">G00 G90 G59
-M03 S800
-G00 X0 Y0 Z5
-G01 Z-1 F30
-G01 X-10 Y0 F80
-G01 X10 Y0
-G01 X0 Y0
-G01 X0 Y-10
-G01 X0 Y10
-G00 Z50
-M05
-M30</textarea>
+<textarea id="gcode" placeholder="输入G代码程序..."></textarea>
 </div>
 </div>
 <div class="btns">
+<button class="btn btn-example" onclick="loadExample()">✦ 十字图案</button>
 <button class="btn btn-primary" onclick="simulate()">▶ 解析程序</button>
 <button class="btn btn-secondary" id="playBtn" style="display:none" onclick="togglePlay()">▶ 仿真</button>
 <button class="btn btn-danger" id="resetBtn" style="display:none" onclick="reset()">✕ 重置</button>
@@ -113,7 +104,24 @@ const ctx=document.getElementById("c").getContext("2d");
 const cx=180,cy=180,workpieceR=160,toolR=25;
 let data=null,points=[],idx=0,playing=false,timer=null;
 
+const EXAMPLE_CODE=`G00 G90 G59
+M03 S800
+G00 X0 Y0 Z5
+G01 Z-1 F30
+G01 X-10 Y0 F80
+G01 X10 Y0
+G01 X0 Y0
+G01 X0 Y-10
+G01 X0 Y10
+G00 Z50
+M05
+M30`;
+
 drawEmpty();
+
+function loadExample(){
+  document.getElementById("gcode").value=EXAMPLE_CODE;
+}
 
 function drawEmpty(){
   ctx.fillStyle="#0A0A0F";
