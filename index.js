@@ -34,6 +34,8 @@ function parseGCode(gcode, scale = 10) {
           const gcode = Math.floor(val);
           if (gcode === 0) motionCmd = "G0";
           else if (gcode === 1) motionCmd = "G1";
+          else if (gcode === 2) motionCmd = "G2";
+          else if (gcode === 3) motionCmd = "G3";
           else if (gcode === 90) isAbs = true;
           else if (gcode === 91) isAbs = false;
         } else if (key === "M" || key === "S" || key === "F") {
@@ -43,7 +45,7 @@ function parseGCode(gcode, scale = 10) {
       }
     }
     
-    if (motionCmd) {
+    if (motionCmd && (motionCmd === "G0" || motionCmd === "G1")) {
       const end = { ...pos };
       if (isAbs) {
         if (params.X !== undefined) end.x = params.X;
@@ -55,6 +57,47 @@ function parseGCode(gcode, scale = 10) {
         if (params.Z !== undefined) end.z += params.Z;
       }
       pathSegments.push({ type: motionCmd === "G0" ? "rapid" : "linear", start: {...pos}, end: {...end} });
+      pos = end;
+    }
+    
+    if (motionCmd && (motionCmd === "G2" || motionCmd === "G3")) {
+      const end = { ...pos };
+      if (isAbs) {
+        if (params.X !== undefined) end.x = params.X;
+        if (params.Y !== undefined) end.y = params.Y;
+        if (params.Z !== undefined) end.z = params.Z;
+      } else {
+        if (params.X !== undefined) end.x += params.X;
+        if (params.Y !== undefined) end.y += params.Y;
+        if (params.Z !== undefined) end.z += params.Z;
+      }
+      
+      let cx = pos.x + (params.I || 0);
+      let cy = pos.y + (params.J || 0);
+      
+      const startAngle = Math.atan2(pos.y - cy, pos.x - cx);
+      let endAngle = Math.atan2(end.y - cy, end.x - cx);
+      
+      if (motionCmd === "G2") {
+        if (endAngle <= startAngle) endAngle += Math.PI * 2;
+      } else {
+        if (endAngle >= startAngle) endAngle -= Math.PI * 2;
+      }
+      
+      const segCount = Math.max(12, Math.ceil(Math.abs(endAngle - startAngle) / (Math.PI / 12)));
+      for (let i = 1; i <= segCount; i++) {
+        const t = i / segCount;
+        const angle = startAngle + (endAngle - startAngle) * t;
+        const px = cx + Math.cos(angle) * Math.sqrt((pos.x - cx) ** 2 + (pos.y - cy) ** 2);
+        const py = cy + Math.sin(angle) * Math.sqrt((pos.x - cx) ** 2 + (pos.y - cy) ** 2);
+        
+        if (i === 1) {
+          pathSegments.push({ type: "arc", start: {...pos}, end: { x: px, y: py, z: end.z } });
+        } else {
+          const lastPt = pathSegments[pathSegments.length - 1].end;
+          pathSegments.push({ type: "arc", start: lastPt, end: { x: px, y: py, z: end.z } });
+        }
+      }
       pos = end;
     }
   }
@@ -69,7 +112,8 @@ function parseGCode(gcode, scale = 10) {
 }
 
 const EXAMPLES = [
-  { name: "十字图案", code: "G00 G90 G59\nM03 S800\nG00 X0 Y0 Z5\nG01 Z-1 F30\nG01 X-10 Y0 F80\nG01 X10 Y0\nG01 X0 Y0\nG01 X0 Y-10\nG01 X0 Y10\nG00 Z50\nM05\nM30" }
+  { name: "十字图案", code: "G00 G90 G59\nM03 S800\nG00 X0 Y0 Z5\nG01 Z-1 F30\nG01 X-10 Y0 F80\nG01 X10 Y0\nG01 X0 Y0\nG01 X0 Y-10\nG01 X0 Y10\nG00 Z50\nM05\nM30" },
+  { name: "圆形图案", code: "G00 G90 G59\nM03 S800\nG00 X0 Y0 Z5\nG01 Z-1 F30\nG02 I10 J0 F80\nG00 Z50\nM05\nM30" }
 ];
 
 app.get("/api/v1/examples", (req, res) => res.json({ success: true, examples: EXAMPLES }));
