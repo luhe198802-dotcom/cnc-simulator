@@ -61,33 +61,37 @@ function parseGCode(gcode, scale = 10) {
     }
     
     if (motionCmd && (motionCmd === "G2" || motionCmd === "G3")) {
-      const end = { ...pos };
-      if (isAbs) {
-        if (params.X !== undefined) end.x = params.X;
-        if (params.Y !== undefined) end.y = params.Y;
-        if (params.Z !== undefined) end.z = params.Z;
-      } else {
-        if (params.X !== undefined) end.x += params.X;
-        if (params.Y !== undefined) end.y += params.Y;
-        if (params.Z !== undefined) end.z += params.Z;
-      }
+      let endX = params.X !== undefined ? (isAbs ? params.X : pos.x + params.X) : pos.x;
+      let endY = params.Y !== undefined ? (isAbs ? params.Y : pos.y + params.Y) : pos.y;
+      let endZ = params.Z !== undefined ? (isAbs ? params.Z : pos.z + params.Z) : pos.z;
+      const end = { x: endX, y: endY, z: endZ };
       
-      const radius = Math.sqrt((params.I || 0) ** 2 + (params.J || 0) ** 2);
       let cx = pos.x + (params.I || 0);
       let cy = pos.y + (params.J || 0);
+      let radius = Math.sqrt((pos.x - cx) ** 2 + (pos.y - cy) ** 2);
+      
+      if (radius < 0.001) radius = Math.sqrt((params.I || 0) ** 2 + (params.J || 0) ** 2);
       
       const startAngle = Math.atan2(pos.y - cy, pos.x - cx);
       let endAngle = Math.atan2(end.y - cy, end.x - cx);
       
-      if (motionCmd === "G2") {
-        endAngle = startAngle - Math.abs(endAngle - startAngle);
-        if (endAngle < -Math.PI) endAngle += Math.PI * 2;
+      let isFullCircle = (Math.abs(end.x - pos.x) < 0.001 && Math.abs(end.y - pos.y) < 0.001);
+      
+      if (isFullCircle) {
+        endAngle = startAngle + (motionCmd === "G2" ? -Math.PI * 2 : Math.PI * 2);
       } else {
-        if (endAngle < startAngle) endAngle += Math.PI * 2;
+        let delta = endAngle - startAngle;
+        if (motionCmd === "G2") {
+          if (delta >= 0) delta -= Math.PI * 2;
+          endAngle = startAngle + delta;
+        } else {
+          if (delta <= 0) delta += Math.PI * 2;
+          endAngle = startAngle + delta;
+        }
       }
       
       const totalAngle = Math.abs(endAngle - startAngle);
-      const segCount = Math.max(12, Math.ceil(totalAngle / (Math.PI / 12)));
+      const segCount = Math.max(36, Math.ceil(totalAngle / (Math.PI / 18)));
       
       for (let i = 1; i <= segCount; i++) {
         const t = i / segCount;
