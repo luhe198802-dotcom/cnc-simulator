@@ -72,6 +72,7 @@ function parseGCode(gcode, scale = 10) {
         if (params.Z !== undefined) end.z += params.Z;
       }
       
+      const radius = Math.sqrt((params.I || 0) ** 2 + (params.J || 0) ** 2);
       let cx = pos.x + (params.I || 0);
       let cy = pos.y + (params.J || 0);
       
@@ -79,17 +80,20 @@ function parseGCode(gcode, scale = 10) {
       let endAngle = Math.atan2(end.y - cy, end.x - cx);
       
       if (motionCmd === "G2") {
-        if (endAngle <= startAngle) endAngle += Math.PI * 2;
+        endAngle = startAngle - Math.abs(endAngle - startAngle);
+        if (endAngle < -Math.PI) endAngle += Math.PI * 2;
       } else {
-        if (endAngle >= startAngle) endAngle -= Math.PI * 2;
+        if (endAngle < startAngle) endAngle += Math.PI * 2;
       }
       
-      const segCount = Math.max(12, Math.ceil(Math.abs(endAngle - startAngle) / (Math.PI / 12)));
+      const totalAngle = Math.abs(endAngle - startAngle);
+      const segCount = Math.max(12, Math.ceil(totalAngle / (Math.PI / 12)));
+      
       for (let i = 1; i <= segCount; i++) {
         const t = i / segCount;
         const angle = startAngle + (endAngle - startAngle) * t;
-        const px = cx + Math.cos(angle) * Math.sqrt((pos.x - cx) ** 2 + (pos.y - cy) ** 2);
-        const py = cy + Math.sin(angle) * Math.sqrt((pos.x - cx) ** 2 + (pos.y - cy) ** 2);
+        const px = cx + radius * Math.cos(angle);
+        const py = cy + radius * Math.sin(angle);
         
         if (i === 1) {
           pathSegments.push({ type: "arc", start: {...pos}, end: { x: px, y: py, z: end.z } });
