@@ -14,6 +14,7 @@ app.use(express.static(join(__dirname, "public")));
 const EPSILON = 0.001;
 const MAX_SPINDLE_SPEED = 800;
 const MAX_CUT_DEPTH_Z = -1.0;
+const MAX_Z_HEIGHT = 200;
 const MAX_PLUNGE_FEED = 30;
 const MAX_CUT_FEED = 80;
 const DEFAULT_WORKPIECE_DIAMETER = 32;
@@ -44,6 +45,10 @@ function isFeedCuttingSegment(seg) {
 }
 
 function validateSegment(seg, alarms, lineNumber, feed, workpieceRadius) {
+  if (Math.max(seg.start.z, seg.end.z) > MAX_Z_HEIGHT + EPSILON) {
+    addAlarm(alarms, `第 ${lineNumber} 行报警：Z轴高度超过限制，Z 不能高于 ${MAX_Z_HEIGHT}mm`);
+  }
+
   if (Math.min(seg.start.z, seg.end.z) < MAX_CUT_DEPTH_Z - EPSILON) {
     addAlarm(alarms, `第 ${lineNumber} 行报警：切削深度超过限制，Z 不能低于 ${MAX_CUT_DEPTH_Z}mm`);
   }
